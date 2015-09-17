@@ -6,7 +6,6 @@ Index: jitsi-meet/index.html
 @@ -10,14 +10,14 @@
      <meta itemprop="description" content="Join a WebRTC video conference powered by the Jitsi Videobridge"/>
      <meta itemprop="image" content="/images/jitsilogo.png"/>
-     <script src="https://api.callstats.io/static/callstats.min.js"></script>
 -    <script src="libs/jquery-2.1.1.min.js"></script>
 +    <script src="libs/jquery.min.js"></script>
      <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>

@@ -7,7 +7,6 @@ var RTPStats = require("./RTPStatsCollector.js");
 var EventEmitter = require("events");
 var StreamEventTypes = require("../../service/RTC/StreamEventTypes.js");
 var XMPPEvents = require("../../service/xmpp/XMPPEvents");
-var CallStats = require("./CallStats");
 var RTCEvents = require("../../service/RTC/RTCEvents");
 
 var eventEmitter = new EventEmitter();
@@ -51,7 +50,6 @@ function onStreamCreated(stream) {
 }
 
 function onDisposeConference(onUnload) {
-    CallStats.sendTerminateEvent();
     stopRemote();
     if(onUnload) {
         stopLocal();
@@ -120,20 +118,15 @@ var statistics = {
         // onnegotiationneeded
         APP.xmpp.addListener(XMPPEvents.CALL_INCOMING, function (event) {
             startRemoteStats(event.peerconnection);
-//            CallStats.init(event);
         });
         APP.xmpp.addListener(XMPPEvents.PEERCONNECTION_READY,
             function (session) {
-            CallStats.init(session);
         });
         APP.RTC.addListener(RTCEvents.AUDIO_MUTE, function (mute) {
-            CallStats.sendMuteEvent(mute, "audio");
         });
         APP.xmpp.addListener(XMPPEvents.CONFERENCE_SETUP_FAILED, function () {
-            CallStats.sendSetupFailedEvent();
         });
         APP.RTC.addListener(RTCEvents.VIDEO_MUTE, function (mute) {
-            CallStats.sendMuteEvent(mute, "video");
         });
     }
 };
