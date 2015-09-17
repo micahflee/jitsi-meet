@@ -30,36 +30,28 @@ var Avatar = {
      * @param jid full MUC jid of the user for whom we want to obtain avatar URL
      */
     getActiveSpeakerUrl: function (jid) {
-        return this.getGravatarUrl(jid, 100);
+        return this.getUrl(jid, 100);
     },
     /**
      * Returns image URL for the avatar to be displayed on small video thumbnail
      * @param jid full MUC jid of the user for whom we want to obtain avatar URL
      */
     getThumbUrl: function (jid) {
-        return this.getGravatarUrl(jid, 100);
+        return this.getUrl(jid, 100);
     },
     /**
      * Returns the URL for the avatar to be displayed as contactlist item
      * @param jid full MUC jid of the user for whom we want to obtain avatar URL
      */
     getContactListUrl: function (jid) {
-        return this.getGravatarUrl(jid, 30);
+        return this.getUrl(jid, 30);
     },
-    getGravatarUrl: function (jid, size) {
-        if (!jid) {
-            console.error("Get gravatar - jid is undefined");
-            return null;
+    getUrl: function (jid, size) {
+        if(size == 100) {
+            return '/images/avatar-100.png';
+        } else {
+            return '/images/avatar-30.png';
         }
-        var id = users[jid];
-        if (!id) {
-            console.warn(
-                "No avatar stored yet for " + jid + " - using JID as ID");
-            id = jid;
-        }
-        return 'https://www.gravatar.com/avatar/' +
-            MD5.hexdigest(id.trim().toLowerCase()) +
-            "?d=wavatar&size=" + (size || "30");
     }
 
 };
