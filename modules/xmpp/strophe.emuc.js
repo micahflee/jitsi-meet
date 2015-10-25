@@ -234,6 +234,8 @@ module.exports = function(XMPP, eventEmitter) {
                 }
                 if (!this.joined) {
                     this.joined = true;
+                    console.log("(TIME) MUC joined:\t",
+                                window.performance.now());
                     eventEmitter.emit(XMPPEvents.MUC_JOINED, from, member);
                     this.list_members.push(from);
                 }
@@ -262,6 +264,10 @@ module.exports = function(XMPP, eventEmitter) {
                     eventEmitter.emit(XMPPEvents.MUC_ROLE_CHANGED,
                         member.role, member.displayName);
                 }
+
+                // store the new
+                if(member.displayName)
+                    this.members[from].displayName = member.displayName;
             }
 
             // Always trigger presence to update bindings

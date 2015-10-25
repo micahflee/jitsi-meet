@@ -80,8 +80,9 @@ function connect(jid, password) {
         var connectionFailed = false;
         var lastErrorMsg;
         connection.connect(jid, password, function (status, msg) {
-            console.log('Strophe status changed to',
-                Strophe.getStatusString(status), msg);
+            console.log("(TIME) Strophe " + Strophe.getStatusString(status) +
+                (msg ? "[" + msg + "]" : "") +
+                "\t:" + window.performance.now());
             if (status === Strophe.Status.CONNECTED) {
                 if (config.useStunTurn) {
                     connection.jingle.getStunAndTurnCredentials();
@@ -576,7 +577,7 @@ var XMPP = {
     },
     // Returns true iff we have joined the MUC.
     isMUCJoined: function () {
-        return connection.emuc.joined;
+        return connection === null ? false : connection.emuc.joined;
     },
     getSessions: function () {
         return connection.jingle.sessions;

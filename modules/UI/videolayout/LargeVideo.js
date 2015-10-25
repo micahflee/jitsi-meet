@@ -180,15 +180,21 @@ function getDesktopVideoPosition(videoWidth,
 
 
 /**
- * Returns an array of the video dimensions, so that it covers the screen.
- * It leaves no empty areas, but some parts of the video might not be visible.
+ * Returns an array of the video dimensions. It respects the
+ * VIDEO_LAYOUT_FIT config, to fit the video to the screen, by hiding some parts
+ * of it, or to fit it to the height or width.
  *
+ * @param videoWidth the original video width
+ * @param videoHeight the original video height
+ * @param videoSpaceWidth the width of the video space
+ * @param videoSpaceHeight the height of the video space
  * @return an array with 2 elements, the video width and the video height
  */
 function getCameraVideoSize(videoWidth,
                             videoHeight,
                             videoSpaceWidth,
                             videoSpaceHeight) {
+
     if (!videoWidth)
         videoWidth = currentVideoWidth;
     if (!videoHeight)
@@ -196,18 +202,32 @@ function getCameraVideoSize(videoWidth,
 
     var aspectRatio = videoWidth / videoHeight;
 
-    var availableWidth = Math.max(videoWidth, videoSpaceWidth);
-    var availableHeight = Math.max(videoHeight, videoSpaceHeight);
+    var availableWidth = videoWidth;
+    var availableHeight = videoHeight;
 
-    if (availableWidth / aspectRatio < videoSpaceHeight) {
+    if (interfaceConfig.VIDEO_LAYOUT_FIT == 'height') {
         availableHeight = videoSpaceHeight;
-        availableWidth = availableHeight * aspectRatio;
+        availableWidth = availableHeight*aspectRatio;
+    }
+    else if (interfaceConfig.VIDEO_LAYOUT_FIT == 'width') {
+        availableWidth = videoSpaceWidth;
+        availableHeight = availableWidth/aspectRatio;
+    }
+    else if (interfaceConfig.VIDEO_LAYOUT_FIT == 'both') {
+        availableWidth = Math.max(videoWidth, videoSpaceWidth);
+        availableHeight = Math.max(videoHeight, videoSpaceHeight);
+
+        if (availableWidth / aspectRatio < videoSpaceHeight) {
+            availableHeight = videoSpaceHeight;
+            availableWidth = availableHeight * aspectRatio;
+        }
+
+        if (availableHeight * aspectRatio < videoSpaceWidth) {
+            availableWidth = videoSpaceWidth;
+            availableHeight = availableWidth / aspectRatio;
+        }
     }
 
-    if (availableHeight * aspectRatio < videoSpaceWidth) {
-        availableWidth = videoSpaceWidth;
-        availableHeight = availableWidth / aspectRatio;
-    }
 
     return [availableWidth, availableHeight];
 }
@@ -362,7 +382,7 @@ var LargeVideo = {
         if(!isEnabled)
             return;
         var newSmallVideo = this.VideoLayout.getSmallVideo(resourceJid);
-        console.log('hover in ' + resourceJid + ', video: ', newSmallVideo);
+        console.info('hover in ' + resourceJid + ', video: ', newSmallVideo);
 
         if (!newSmallVideo) {
             console.error("Small video not found for: " + resourceJid);

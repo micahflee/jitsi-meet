@@ -1,6 +1,17 @@
 /* jshint -W117 */
 /* application specific logic */
 
+require("jquery");
+require("jquery-ui");
+require("strophe");
+require("strophe-disco");
+require("strophe-caps");
+require("tooltip");
+require("popover");
+window.toastr = require("toastr");
+require("jQuery-Impromptu");
+require("autosize");
+
 var APP =
 {
     init: function () {
@@ -35,7 +46,7 @@ function init() {
 }
 
 /**
- * If we have HTTP endpoint for getting confgi.json configured we're going to
+ * If we have an HTTP endpoint for getting config.json configured we're going to
  * read it and override properties from config.js and interfaceConfig.js.
  * If there is no endpoint we'll just continue with initialization.
  * Keep in mind that if the endpoint has been configured and we fail to obtain
@@ -43,12 +54,16 @@ function init() {
  * will be displayed to the user.
  */
 function obtainConfigAndInit() {
+    var roomName = APP.UI.getRoomNode();
+
     if (config.configLocation) {
         APP.configFetch.obtainConfig(
-            config.configLocation, APP.UI.getRoomNode(),
+            config.configLocation, roomName,
             // Get config result callback
             function(success, error) {
                 if (success) {
+                    console.log("(TIME) configuration fetched:\t",
+                                window.performance.now());
                     init();
                 } else {
                     // Show obtain config error,
@@ -58,12 +73,16 @@ function obtainConfigAndInit() {
                 }
             });
     } else {
+        require("./modules/config/BoshAddressChoice").chooseAddress(
+            config, roomName);
+
         init();
     }
 }
 
 
 $(document).ready(function () {
+    console.log("(TIME) document ready:\t", window.performance.now());
 
     var URLProcessor = require("./modules/config/URLProcessor");
     URLProcessor.setConfigParametersFromUrl();

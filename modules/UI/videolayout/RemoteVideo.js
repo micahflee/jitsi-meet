@@ -4,6 +4,7 @@ var SmallVideo = require("./SmallVideo");
 var AudioLevels = require("../audio_levels/AudioLevels");
 var RTCBrowserType = require("../../RTC/RTCBrowserType");
 var UIUtils = require("../util/UIUtil");
+var XMPPEvents = require("../../../service/xmpp/XMPPEvents");
 
 function RemoteVideo(peerJid, VideoLayout) {
     this.peerJid = peerJid;
@@ -167,6 +168,9 @@ RemoteVideo.prototype.removeRemoteStreamElement =
 RemoteVideo.prototype.remove = function () {
     console.log("Remove thumbnail", this.peerJid);
     this.removeConnectionIndicator();
+    // Make sure that the large video is updated if are removing its
+    // corresponding small video.
+    this.VideoLayout.updateRemovedVideo(this.getResourceJid());
     // Remove whole container
     if (this.container.parentNode)
         this.container.parentNode.removeChild(this.container);
@@ -203,13 +207,13 @@ RemoteVideo.prototype.waitForPlayback = function (sel, stream) {
     sel[0].onplaying = onPlayingHandler;
 };
 
-RemoteVideo.prototype.addRemoteStreamElement = function (sid, stream, thessrc) {
+RemoteVideo.prototype.addRemoteStreamElement = function (stream) {
     if (!this.container)
         return;
 
     var self = this;
     var isVideo = stream.getVideoTracks().length > 0;
-    var streamElement = SmallVideo.createStreamElement(sid, stream);
+    var streamElement = SmallVideo.createStreamElement(stream);
     var newElementId = streamElement.id;
 
     // Put new stream element always in front

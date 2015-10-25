@@ -8,6 +8,7 @@ var EventEmitter = require("events");
 var StreamEventTypes = require("../../service/RTC/StreamEventTypes.js");
 var XMPPEvents = require("../../service/xmpp/XMPPEvents");
 var RTCEvents = require("../../service/RTC/RTCEvents");
+var StatisticsEvents = require("../../service/statistics/Events");
 
 var eventEmitter = new EventEmitter();
 
@@ -25,7 +26,7 @@ function stopLocal() {
 function stopRemote() {
     if (rtpStats) {
         rtpStats.stop();
-        eventEmitter.emit("statistics.stop");
+        eventEmitter.emit(StatisticsEvents.STOP);
         rtpStats = null;
     }
 }
@@ -64,37 +65,12 @@ var statistics = {
      */
     LOCAL_JID: 'local',
 
-    addAudioLevelListener: function(listener)
-    {
-        eventEmitter.on("statistics.audioLevel", listener);
+    addListener: function(type, listener) {
+        eventEmitter.on(type, listener);
     },
-
-    removeAudioLevelListener: function(listener)
-    {
-        eventEmitter.removeListener("statistics.audioLevel", listener);
+    removeListener: function (type, listener) {
+        eventEmitter.removeListener(type, listener);
     },
-
-    addConnectionStatsListener: function(listener)
-    {
-        eventEmitter.on("statistics.connectionstats", listener);
-    },
-
-    removeConnectionStatsListener: function(listener)
-    {
-        eventEmitter.removeListener("statistics.connectionstats", listener);
-    },
-
-
-    addRemoteStatsStopListener: function(listener)
-    {
-        eventEmitter.on("statistics.stop", listener);
-    },
-
-    removeRemoteStatsStopListener: function(listener)
-    {
-        eventEmitter.removeListener("statistics.stop", listener);
-    },
-
     stop: function () {
         stopLocal();
         stopRemote();
@@ -103,12 +79,10 @@ var statistics = {
             eventEmitter.removeAllListeners();
         }
     },
-
     stopRemoteStatistics: function()
     {
         stopRemote();
     },
-
     start: function () {
         APP.RTC.addStreamListener(onStreamCreated,
             StreamEventTypes.EVENT_TYPE_LOCAL_CREATED);

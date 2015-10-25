@@ -4,6 +4,7 @@ var config = {
     hosts: {
         domain: 'jitsi-meet.example.com',
         //anonymousdomain: 'guest.example.com',
+        // authdomain: 'jitsi-meet.example.com',  // defaults to <domain>
         muc: 'conference.jitsi-meet.example.com', // FIXME: use XEP-0030
         bridge: 'jitsi-videobridge.jitsi-meet.example.com', // FIXME: use XEP-0030
         //jirecon: 'jirecon.jitsi-meet.example.com',
@@ -42,6 +43,11 @@ var config = {
     desktopSharingFirefoxMaxVersionExtRequired: -1,
     // The URL to the Firefox extension for desktop sharing.
     desktopSharingFirefoxExtensionURL: null,
+
+    // Disables ICE/UDP by filtering out local and remote UDP candidates in signalling.
+    webrtcIceUdpDisable: false,
+    // Disables ICE/TCP by filtering out local and remote TCP candidates in signalling.
+    webrtcIceTcpDisable: false,
 
     openSctp: true, // Toggle to enable/disable SCTP channels
     disableStats: false,

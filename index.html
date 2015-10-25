@@ -1,47 +1,23 @@
 <html itemscope itemtype="http://schema.org/Product" prefix="og: http://ogp.me/ns#" xmlns="http://www.w3.org/1999/html">
   <head>
     <!--#include virtual="title.html" -->
-    <link rel="icon" type="image/png" href="/images/favicon.ico"/>
+    <link rel="icon" type="image/png" href="/images/favicon.ico?v=1"/>
     <meta property="og:title" content="Jitsi Meet"/>
-    <meta property="og:image" content="/images/jitsilogo.png"/>
+    <meta property="og:image" content="/images/jitsilogo.png?v=1"/>
     <meta property="og:description" content="Join a WebRTC video conference powered by the Jitsi Videobridge"/>
     <meta description="Join a WebRTC video conference powered by the Jitsi Videobridge"/>
     <meta itemprop="name" content="Jitsi Meet"/>
     <meta itemprop="description" content="Join a WebRTC video conference powered by the Jitsi Videobridge"/>
-    <meta itemprop="image" content="/images/jitsilogo.png"/>
-    <script src="libs/jquery-2.1.1.min.js"></script>
-    <script src="config.js?v=13"></script><!-- adapt to your needs, i.e. set hosts and bosh path -->
-    <script src="libs/strophe/strophe.min.js?v=2"></script>
-    <script src="libs/strophe/strophe.disco.min.js?v=1"></script>
-    <script src="libs/strophe/strophe.caps.jsonly.min.js?v=1"></script>
-    <script src="libs/jquery-ui.min.js"></script>
-    <script src="libs/tooltip.min.js?v=1"></script><!-- bootstrap tooltip lib -->
-    <script src="libs/popover.min.js?v=1"></script><!-- bootstrap tooltip lib -->
-    <script src="libs/toastr.min.js?v=1"></script><!-- notifications lib -->
+    <meta itemprop="image" content="/images/jitsilogo.png?v=1"/>
+    <link rel="stylesheet" href="css/all.css"/>
+    <script>console.log("(TIME) index.html loaded:\t", window.performance.now());</script>
+    <script src="config.js?v=15"></script><!-- adapt to your needs, i.e. set hosts and bosh path -->
     <script src="interface_config.js?v=6"></script>
     <script src="libs/app.bundle.min.js?v=138"></script>
-    <link rel="stylesheet" href="css/font.css?v=7"/>
-    <link rel="stylesheet" href="css/toastr.css?v=1">
-    <link rel="stylesheet" type="text/css" media="screen" href="css/main.css?v=31"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="css/videolayout_default.css?v=20" id="videolayout_default"/>
-    <link href="images/font-awesome-4.4.0/css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/jquery-impromptu.css?v=4">
-    <link rel="stylesheet" href="css/modaldialog.css?v=3">
-    <link rel="stylesheet" href="css/notice.css?v=1">
-    <link rel="stylesheet" href="css/popup_menu.css?v=4">
-    <link rel="stylesheet" href="css/login_menu.css?v=1">
-    <link rel="stylesheet" href="css/popover.css?v=2">
-    <link rel="stylesheet" href="css/jitsi_popover.css?v=2">
-    <link rel="stylesheet" href="css/contact_list.css?v=4">
-    <link rel="stylesheet" href="css/chat.css?v=5">
-    <link rel="stylesheet" href="css/welcome_page.css?v=2">
-    <link rel="stylesheet" href="css/settingsmenu.css?v=2">
     <!--
         Link used for inline installation of chrome desktop streaming extension,
         is updated automatically from the code with the value defined in config.js -->
     <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/diibjkoicjeejcmhdnailmkgecihlobk">
-    <script src="libs/jquery-impromptu.min.js?v=2"></script>
-    <script src="libs/jquery.autosize.min.js"></script>
     <!--#include virtual="plugin.head.html" -->
   </head>
   <body>

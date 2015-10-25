@@ -56,6 +56,7 @@ function JingleSessionPC(me, sid, connection, service, eventEmitter) {
     // stable and the ice connection state is connected.
     this.modifySourcesQueue.pause();
 }
+//XXX this is badly broken...
 JingleSessionPC.prototype = JingleSession.prototype;
 JingleSessionPC.prototype.constructor = JingleSessionPC;
 
@@ -95,24 +96,34 @@ JingleSessionPC.prototype.doInitialize = function () {
             this);
 
     this.peerconnection.onicecandidate = function (event) {
+        var protocol;
+        if (event && event.candidate) {
+            protocol = (typeof event.candidate.protocol === 'string')
+                ? event.candidate.protocol.toLowerCase() : '';
+            if ((config.webrtcIceTcpDisable && protocol == 'tcp') ||
+                (config.webrtcIceUdpDisable && protocol == 'udp')) {
+                return;
+            }
+        }
         self.sendIceCandidate(event.candidate);
     };
     this.peerconnection.onaddstream = function (event) {
-        if (event.stream.id !== 'default') {
-        console.log("REMOTE STREAM ADDED: ", event.stream , event.stream.id);
-        self.remoteStreamAdded(event);
-        } else {
+        if (event.stream.id === 'default') {
             // This is a recvonly stream. Clients that implement Unified Plan,
             // such as Firefox use recvonly "streams/channels/tracks" for
             // receiving remote stream/tracks, as opposed to Plan B where there
             // are only 3 channels: audio, video and data.
-            console.log("RECVONLY REMOTE STREAM IGNORED: " + event.stream + " - " + event.stream.id);
+            console.log("RECVONLY REMOTE STREAM IGNORED: " + event.stream +
+            " - " + event.stream.id);
+            return;
         }
+
+        console.log("REMOTE STREAM ADDED: ", event.stream, event.stream.id);
+        self.remoteStreamAdded(event);
     };
     this.peerconnection.onremovestream = function (event) {
-        // Remove the stream from remoteStreams
-        // FIXME: remotestreamremoved.jingle not defined anywhere(unused)
-        $(document).trigger('remotestreamremoved.jingle', [event, self.sid]);
+        // Remove the stream from remoteStreams?
+        console.log("We are ignoring a removestream event: " + event);
     };
     this.peerconnection.onsignalingstatechange = function (event) {
         if (!(self && self.peerconnection)) return;
@@ -131,7 +142,8 @@ JingleSessionPC.prototype.doInitialize = function () {
      */
     this.peerconnection.oniceconnectionstatechange = function (event) {
         if (!(self && self.peerconnection)) return;
-        console.info("Ice: " + self.peerconnection.iceConnectionState);
+        console.log("(TIME) ICE " + self.peerconnection.iceConnectionState +
+                    ":\t", window.performance.now());
         self.updateModifySourcesQueue();
         switch (self.peerconnection.iceConnectionState) {
             case 'connected':
@@ -229,6 +241,12 @@ JingleSessionPC.prototype.accept = function () {
         pranswer.sdp = pranswer.sdp.replace('a=inactive', 'a=sendrecv');
     }
     var prsdp = new SDP(pranswer.sdp);
+    if (config.webrtcIceTcpDisable) {
+        prsdp.removeTcpCandidates = true;
+    }
+    if (config.webrtcIceUdpDisable) {
+        prsdp.removeUdpCandidates = true;
+    }
     var accept = $iq({to: this.peerjid,
         type: 'set'})
         .c('jingle', {xmlns: 'urn:xmpp:jingle:1',
@@ -337,6 +355,12 @@ JingleSessionPC.prototype.sendIceCandidate = function (candidate) {
                     initiator: this.initiator,
                     sid: this.sid});
             this.localSDP = new SDP(this.peerconnection.localDescription.sdp);
+            if (config.webrtcIceTcpDisable) {
+                this.localSDP.removeTcpCandidates = true;
+            }
+            if (config.webrtcIceUdpDisable) {
+                this.localSDP.removeUdpCandidates = true;
+            }
             var sendJingle = function (ssrc) {
                 if(!ssrc)
                     ssrc = {};
@@ -533,8 +557,14 @@ JingleSessionPC.prototype.getSsrcOwner = function (ssrc) {
 };
 
 JingleSessionPC.prototype.setRemoteDescription = function (elem, desctype) {
-    //console.log('setting remote description... ', desctype);
     this.remoteSDP = new SDP('');
+    if (config.webrtcIceTcpDisable) {
+        this.remoteSDP.removeTcpCandidates = true;
+    }
+    if (config.webrtcIceUdpDisable) {
+        this.remoteSDP.removeUdpCandidates = true;
+    }
+
     this.remoteSDP.fromJingle(elem);
     this.readSsrcInfo($(elem).find(">content"));
     if (this.peerconnection.remoteDescription !== null) {
@@ -577,6 +607,10 @@ JingleSessionPC.prototype.setRemoteDescription = function (elem, desctype) {
     );
 };
 
+/**
+ * Adds remote ICE candidates to this Jingle session.
+ * @param elem An array of Jingle "content" elements?
+ */
 JingleSessionPC.prototype.addIceCandidate = function (elem) {
     var self = this;
     if (this.peerconnection.signalingState == 'closed') {
@@ -587,7 +621,7 @@ JingleSessionPC.prototype.addIceCandidate = function (elem) {
         // create a PRANSWER for setRemoteDescription
         if (!this.remoteSDP) {
             var cobbled = 'v=0\r\n' +
-                'o=- ' + '1923518516' + ' 2 IN IP4 0.0.0.0\r\n' +// FIXME
+                'o=- 1923518516 2 IN IP4 0.0.0.0\r\n' +// FIXME
                 's=-\r\n' +
                 't=0 0\r\n';
             // first, take some things from the local description
@@ -672,6 +706,14 @@ JingleSessionPC.prototype.addIceCandidate = function (elem) {
         // TODO: check ice-pwd and ice-ufrag?
         $(this).find('transport>candidate').each(function () {
             var line, candidate;
+            var protocol = this.getAttribute('protocol');
+            protocol =
+                (typeof protocol === 'string') ? protocol.toLowerCase() : '';
+            if ((config.webrtcIceTcpDisable && protocol == 'tcp') ||
+                (config.webrtcIceUdpDisable && protocol == 'udp')) {
+                return;
+            }
+
             line = SDPUtil.candidateFromJingle(this);
             candidate = new RTCIceCandidate({sdpMLineIndex: idx,
                 sdpMid: name,
@@ -724,6 +766,12 @@ JingleSessionPC.prototype.createdAnswer = function (sdp, provisional) {
                         initiator: self.initiator,
                         responder: self.responder,
                         sid: self.sid });
+                if (config.webrtcIceTcpDisable) {
+                    self.localSDP.removeTcpCandidates = true;
+                }
+                if (config.webrtcIceUdpDisable) {
+                    self.localSDP.removeUdpCandidates = true;
+                }
                 self.localSDP.toJingle(
                     accept,
                     self.initiator == self.me ? 'initiator' : 'responder',
@@ -811,7 +859,11 @@ JingleSessionPC.prototype.sendTerminate = function (reason, text) {
     }
 };
 
-JingleSessionPC.prototype.addSource = function (elem, fromJid) {
+/**
+ * Handles a Jingle source-add message for this Jingle session.
+ * @param elem An array of Jingle "content" elements.
+ */
+JingleSessionPC.prototype.addSource = function (elem) {
 
     var self = this;
     // FIXME: dirty waiting
@@ -819,7 +871,7 @@ JingleSessionPC.prototype.addSource = function (elem, fromJid) {
         console.warn("addSource - localDescription not ready yet");
         setTimeout(function()
             {
-                self.addSource(elem, fromJid);
+                self.addSource(elem);
             },
             200
         );
@@ -843,7 +895,7 @@ JingleSessionPC.prototype.addSource = function (elem, fromJid) {
                 return this.getAttribute('ssrc');
             }).get();
 
-            if (!ssrcs.length) {
+            if (ssrcs.length) {
                 lines += 'a=ssrc-group:' + semantics + ' ' + ssrcs.join(' ') + '\r\n';
             }
         });
@@ -892,14 +944,18 @@ JingleSessionPC.prototype.addSource = function (elem, fromJid) {
     });
 };
 
-JingleSessionPC.prototype.removeSource = function (elem, fromJid) {
+/**
+ * Handles a Jingle source-remove message for this Jingle session.
+ * @param elem An array of Jingle "content" elements.
+ */
+JingleSessionPC.prototype.removeSource = function (elem) {
 
     var self = this;
     // FIXME: dirty waiting
     if (!this.peerconnection.localDescription) {
         console.warn("removeSource - localDescription not ready yet");
         setTimeout(function() {
-                self.removeSource(elem, fromJid);
+                self.removeSource(elem);
             },
             200
         );
@@ -1394,24 +1450,29 @@ function sendKeyframe(pc) {
     );
 }
 
-
-JingleSessionPC.prototype.remoteStreamAdded = function (data, times) {
+/**
+ * Handles 'onaddstream' events from the RTCPeerConnection.
+ * @param event the 'onaddstream' event.
+ */
+JingleSessionPC.prototype.remoteStreamAdded = function (event) {
     var self = this;
-    var thessrc;
-    var streamId = APP.RTC.getStreamID(data.stream);
+    var ssrc;
+    var ssrclines;
+    var streamId = APP.RTC.getStreamID(event.stream);
 
     // look up an associated JID for a stream id
     if (!streamId) {
-        console.error("No stream ID for", data.stream);
-    } else if (streamId && streamId.indexOf('mixedmslabel') === -1) {
+        console.error("No stream ID for", event.stream);
+    } else if (streamId.indexOf('mixedmslabel') === -1) {
         // look only at a=ssrc: and _not_ at a=ssrc-group: lines
 
-        var ssrclines
-            = SDPUtil.find_lines(this.peerconnection.remoteDescription.sdp, 'a=ssrc:');
+        ssrclines = SDPUtil.find_lines(
+            this.peerconnection.remoteDescription.sdp,
+            'a=ssrc:');
         ssrclines = ssrclines.filter(function (line) {
             // NOTE(gp) previously we filtered on the mslabel, but that property
             // is not always present.
-            // return line.indexOf('mslabel:' + data.stream.label) !== -1;
+            // return line.indexOf('mslabel:' + event.stream.label) !== -1;
 
             if (RTCBrowserType.isTemasysPluginUsed()) {
                 return ((line.indexOf('mslabel:' + streamId) !== -1));
@@ -1420,33 +1481,21 @@ JingleSessionPC.prototype.remoteStreamAdded = function (data, times) {
             }
         });
         if (ssrclines.length) {
-            thessrc = ssrclines[0].substring(7).split(' ')[0];
+            ssrc = ssrclines[0].substring(7).split(' ')[0];
 
-            if (!self.ssrcOwners[thessrc]) {
-                console.error("No SSRC owner known for: " + thessrc);
+            if (!self.ssrcOwners[ssrc]) {
+                console.error("No SSRC owner known for: " + ssrc);
                 return;
             }
-            data.peerjid = self.ssrcOwners[thessrc];
-            console.log('associated jid', self.ssrcOwners[thessrc]);
+            event.peerjid = self.ssrcOwners[ssrc];
+            console.log('Adding remote stream, SSRC ' + ssrc +
+                ', associated jid ' + event.peerjid);
         } else {
             console.error("No SSRC lines for ", streamId);
         }
     }
 
-    APP.RTC.createRemoteStream(data, this.sid, thessrc);
-
-    var isVideo = data.stream.getVideoTracks().length > 0;
-    // an attempt to work around https://github.com/jitsi/jitmeet/issues/32
-    // TODO: is this hack still needed now that we announce an SSRC for
-    // receive-only streams?
-    if (isVideo &&
-        data.peerjid && this.peerjid === data.peerjid &&
-        data.stream.getVideoTracks().length === 0 &&
-        APP.RTC.localVideo.getTracks().length > 0) {
-        window.setTimeout(function () {
-            sendKeyframe(self.peerconnection);
-        }, 3000);
-    }
+    APP.RTC.createRemoteStream(event, ssrc);
 };
 
 module.exports = JingleSessionPC;

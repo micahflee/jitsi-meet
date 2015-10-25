@@ -44,6 +44,10 @@ function getMediaStreamUsage()
 }
 
 var RTC = {
+    // Exposes DataChannels to public consumption (e.g. jitsi-meet-torture)
+    // without the necessity to require the module.
+    "DataChannels": DataChannels,
+
     rtcUtils: null,
     devices: {
         audio: true,
@@ -97,7 +101,7 @@ var RTC = {
             }
         }
     },
-    createRemoteStream: function (data, sid, thessrc) {
+    createRemoteStream: function (data, ssrc) {
         var jid = data.peerjid || APP.xmpp.myJid();
 
         // check the video muted state from last stored presence if any
@@ -107,7 +111,7 @@ var RTC = {
             muted = pres.videoMuted;
         }
 
-        var remoteStream = new MediaStream(data, sid, thessrc,
+        var remoteStream = new MediaStream(data, ssrc,
             RTCBrowserType.getBrowserType(), eventEmitter, muted);
 
         if(!this.remoteStreams[jid]) {

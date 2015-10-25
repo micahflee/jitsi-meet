@@ -95,6 +95,8 @@ module.exports = function(XMPP, eventEmitter) {
             // see http://xmpp.org/extensions/xep-0166.html#concepts-session
             switch (action) {
                 case 'session-initiate':
+                    console.log("(TIME) received session-initiate:\t",
+                                window.performance.now());
                     var startMuted = $(iq).find('jingle>startmuted');
                     if (startMuted && startMuted.length > 0) {
                         var audioMuted = startMuted.attr("audio");
@@ -174,11 +176,11 @@ module.exports = function(XMPP, eventEmitter) {
                     break;
                 case 'addsource': // FIXME: proprietary, un-jingleish
                 case 'source-add': // FIXME: proprietary
-                    sess.addSource($(iq).find('>jingle>content'), fromJid);
+                    sess.addSource($(iq).find('>jingle>content'));
                     break;
                 case 'removesource': // FIXME: proprietary, un-jingleish
                 case 'source-remove': // FIXME: proprietary
-                    sess.removeSource($(iq).find('>jingle>content'), fromJid);
+                    sess.removeSource($(iq).find('>jingle>content'));
                     break;
                 default:
                     console.warn('jingle action not implemented', action);
